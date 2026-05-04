@@ -8,7 +8,6 @@ typedef struct { int x; int y; } t_pos;
 typedef struct s_player {
     size_t              current;
     size_t              team;
-    t_game_state        *game_state;
     t_pos               pos;
     struct s_player     *next;
 }   t_player;

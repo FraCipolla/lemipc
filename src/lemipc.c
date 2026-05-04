@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 {
     int             fd;
     char*           shmpath;
-    struct shmbuf   *shmp;
+    void            *shmp;
 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s /shm-path\n", argv[0]);
@@ -28,25 +28,25 @@ int main(int argc, char *argv[])
     fd = shm_open(shmpath, O_CREAT | O_EXCL | O_RDWR, 0600);
     if (fd == -1 && errno == EEXIST) {
         // we are not the first player, resources already exists
-
+        printf("resources already existing\n");
     } else if (fd == -1) {
         err(EXIT_FAILURE, "shm_open");
     }
 
     // first player
-    if (ftruncate(fd, sizeof(struct shmbuf)) == -1)
+    if (ftruncate(fd, sizeof(void)) == -1)
         err(EXIT_FAILURE, "ftruncate");
 
     /* Map the object into the caller's address space.  */
 
-    if (shmp = mmap(
+    if ((shmp = mmap(
         NULL,
         sysconf(_SC_PAGESIZE),
         PROT_READ | PROT_WRITE,
         MAP_SHARED,
         fd,
         0
-    ) == MAP_FAILED) err(EXIT_FAILURE, "mmap");
+    )) == MAP_FAILED) err(EXIT_FAILURE, "mmap");
 
     // create share resources
     shmp = &(t_game_state) {
@@ -60,33 +60,33 @@ int main(int argc, char *argv[])
 
     /* Initialize semaphores as process-shared, with value 0.  */
 
-    if (sem_init(&shmp->sem1, 1, 0) == -1)
-        err(EXIT_FAILURE, "sem_init-sem1");
-    if (sem_init(&shmp->sem2, 1, 0) == -1)
-        err(EXIT_FAILURE, "sem_init-sem2");
+    // if (sem_init(&shmp->sem1, 1, 0) == -1)
+    //     err(EXIT_FAILURE, "sem_init-sem1");
+    // if (sem_init(&shmp->sem2, 1, 0) == -1)
+    //     err(EXIT_FAILURE, "sem_init-sem2");
 
-    /* Wait for 'sem1' to be posted by peer before touching
-       shared memory.  */
+    // /* Wait for 'sem1' to be posted by peer before touching
+    //    shared memory.  */
 
-    if (sem_wait(&shmp->sem1) == -1)
-        err(EXIT_FAILURE, "sem_wait");
+    // if (sem_wait(&shmp->sem1) == -1)
+    //     err(EXIT_FAILURE, "sem_wait");
 
-    /* Convert data in shared memory into upper case.  */
+    // /* Convert data in shared memory into upper case.  */
 
-    for (size_t j = 0; j < shmp->cnt; j++)
-        shmp->buf[j] = toupper((unsigned char) shmp->buf[j]);
+    // for (size_t j = 0; j < shmp->cnt; j++)
+    //     shmp->buf[j] = toupper((unsigned char) shmp->buf[j]);
 
-    /* Post 'sem2' to tell the peer that it can now
-       access the modified data in shared memory.  */
+    // /* Post 'sem2' to tell the peer that it can now
+    //    access the modified data in shared memory.  */
 
-    if (sem_post(&shmp->sem2) == -1)
-        err(EXIT_FAILURE, "sem_post");
+    // if (sem_post(&shmp->sem2) == -1)
+    //     err(EXIT_FAILURE, "sem_post");
 
     /* Unlink the shared memory object.  Even if the peer process
        is still using the object, this is okay.  The object will
        be removed only after all open references are closed.  */
 
     shm_unlink(shmpath);
-
+    munmap(shmp, sysconf(_SC_PAGESIZE));
     exit(EXIT_SUCCESS);
 }
