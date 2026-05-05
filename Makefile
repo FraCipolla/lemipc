@@ -1,7 +1,7 @@
 NAME=lemipc
 SRCDIR=src
 OBJDIR=obj
-SRC=lemipc.c
+SRC=main.c
 SRCS=$(addprefix $(SRCDIR)/, $(SRC))
 CC=cc
 CFLAGS=-Wall -Wextra -Werror -o3 -Iinclude

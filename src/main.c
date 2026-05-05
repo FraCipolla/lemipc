@@ -12,32 +12,25 @@ int main(int argc, char *argv[])
 {
     int             fd;
     char*           shmpath;
-    void            *shmp;
+    t_game_state    *shmp;
 
     if (argc != 2) {
-        fprintf(stderr, "Usage: %s /shm-path\n", argv[0]);
+        fprintf(stderr, "Usage: lemipc <team>\n");
         exit(EXIT_FAILURE);
     }
     
     int team_number = atoi(argv[1]);
     shmpath = "lemipc";
 
-    /* Create shared memory object and set its size to the size
-       of our structure.  */
-
     fd = shm_open(shmpath, O_CREAT | O_EXCL | O_RDWR, 0600);
-    if (fd == -1 && errno == EEXIST) {
-        // we are not the first player, resources already exists
-        printf("resources already existing\n");
-    } else if (fd == -1) {
+    
+    if (fd == -1) {
         err(EXIT_FAILURE, "shm_open");
     }
 
     // first player
     if (ftruncate(fd, sizeof(void)) == -1)
         err(EXIT_FAILURE, "ftruncate");
-
-    /* Map the object into the caller's address space.  */
 
     if ((shmp = mmap(
         NULL,
@@ -48,16 +41,18 @@ int main(int argc, char *argv[])
         0
     )) == MAP_FAILED) err(EXIT_FAILURE, "mmap");
 
-    // create share resources
-    shmp = &(t_game_state) {
-        .start=0,
-        .board=&(t_board) { .width=256, .height=256, .players=NULL},
-        .n_players=1,
-        .n_teams=1,
-        .teams=&(t_team){.team_idx=team_number, .team_size=1,.players=NULL,.next=NULL}
-    };
-    
+    if (shmp->init == 0) {
+        // first player, initialize shared resources
 
+        shmp = &(t_game_state) {
+            .start=0,
+            .board=&(t_board) { .width=256, .height=256, .players=NULL},
+            .n_players=1,
+            .n_teams=1,
+            .teams=&(t_team){.team_idx=team_number, .team_size=1,.players=NULL,.next=NULL}
+        };
+    }
+    
     /* Initialize semaphores as process-shared, with value 0.  */
 
     // if (sem_init(&shmp->sem1, 1, 0) == -1)
