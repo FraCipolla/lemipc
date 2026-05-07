@@ -24,7 +24,22 @@ int main(int argc, char *argv[])
 
     fd = shm_open(shmpath, O_CREAT | O_EXCL | O_RDWR, 0600);
     
-    if (fd == -1) {
+    if (fd == -1 && errno == EEXIST) { 
+        printf("errno == EEXIST\n");
+    if ((shmp = mmap(
+        NULL,
+        sysconf(_SC_PAGESIZE),
+        PROT_READ | PROT_WRITE,
+        MAP_SHARED,
+        fd,
+        0
+    )) == MAP_FAILED) err(EXIT_FAILURE, "mmap");
+
+        printf("second player: %d\n", shmp->b_resource_created);
+        if (sem_post(&shmp->init) == -1)
+            err(EXIT_FAILURE, "sem_post");
+    } else if(fd == -1) {
+        shm_unlink(shmpath);
         err(EXIT_FAILURE, "shm_open");
     }
 
@@ -41,18 +56,28 @@ int main(int argc, char *argv[])
         0
     )) == MAP_FAILED) err(EXIT_FAILURE, "mmap");
 
-    if (shmp->init == 0) {
+    if (shmp->b_resource_created == 0) {
         // first player, initialize shared resources
+        printf("first player\n");
 
         shmp = &(t_game_state) {
-            .start=0,
+            .b_resource_created=0,
             .board=&(t_board) { .width=256, .height=256, .players=NULL},
             .n_players=1,
             .n_teams=1,
             .teams=&(t_team){.team_idx=team_number, .team_size=1,.players=NULL,.next=NULL}
         };
+        
+        shmp->b_resource_created = 1;
+        
+        if(sem_init(&shmp->init, 1, 0) == -1)
+            err(EXIT_FAILURE, "sem_init-init");
+
+        if (sem_wait(&shmp->init) == -1)
+            err(EXIT_FAILURE, "sem_wait");
+        
+        printf("sem_unlocked\n");
     }
-    
     /* Initialize semaphores as process-shared, with value 0.  */
 
     // if (sem_init(&shmp->sem1, 1, 0) == -1)

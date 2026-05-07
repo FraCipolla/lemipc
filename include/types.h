@@ -2,6 +2,7 @@
 #define TYPES_H
 
 #include <stddef.h>
+#include <semaphore.h>
 
 typedef struct { int x; int y; } t_pos;
 
@@ -26,8 +27,8 @@ typedef struct s_board {
 }   t_board;
 
 typedef struct s_game_state {
-    short      init;
-    short       start;
+    sem_t       init;
+    short       b_resource_created;
     t_board     *board;
     size_t      n_players;
     size_t      n_teams;
