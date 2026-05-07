@@ -60,51 +60,25 @@ int main(int argc, char *argv[])
         // first player, initialize shared resources
         printf("first player\n");
 
-        shmp = &(t_game_state) {
-            .b_resource_created=0,
-            .board=&(t_board) { .width=256, .height=256, .players=NULL},
-            .n_players=1,
-            .n_teams=1,
-            .teams=&(t_team){.team_idx=team_number, .team_size=1,.players=NULL,.next=NULL}
-        };
+        shmp = &(t_game_state) {.board={0} };
         
-        shmp->b_resource_created = 1;
-        
-        if(sem_init(&shmp->init, 1, 0) == -1)
+        if(sem_init(&shmp->play, 1, 0) == -1)
             err(EXIT_FAILURE, "sem_init-init");
 
-        if (sem_wait(&shmp->init) == -1)
+        if (sem_wait(&shmp->play) == -1)
             err(EXIT_FAILURE, "sem_wait");
         
         printf("sem_unlocked\n");
     }
-    /* Initialize semaphores as process-shared, with value 0.  */
 
-    // if (sem_init(&shmp->sem1, 1, 0) == -1)
-    //     err(EXIT_FAILURE, "sem_init-sem1");
-    // if (sem_init(&shmp->sem2, 1, 0) == -1)
-    //     err(EXIT_FAILURE, "sem_init-sem2");
-
-    // /* Wait for 'sem1' to be posted by peer before touching
-    //    shared memory.  */
-
-    // if (sem_wait(&shmp->sem1) == -1)
-    //     err(EXIT_FAILURE, "sem_wait");
-
-    // /* Convert data in shared memory into upper case.  */
-
-    // for (size_t j = 0; j < shmp->cnt; j++)
-    //     shmp->buf[j] = toupper((unsigned char) shmp->buf[j]);
-
-    // /* Post 'sem2' to tell the peer that it can now
-    //    access the modified data in shared memory.  */
-
-    // if (sem_post(&shmp->sem2) == -1)
-    //     err(EXIT_FAILURE, "sem_post");
-
-    /* Unlink the shared memory object.  Even if the peer process
-       is still using the object, this is okay.  The object will
-       be removed only after all open references are closed.  */
+    for (;;) {
+        if (sem_wait(&shmp->play) == -1)
+            err(EXIT_FAILURE, "sem_wait");
+        // this player turn
+        // check board. If only 1 team the game is over
+        // if not move to closest enemy
+        sem_post(&shmp->play); // move to next player
+    }
 
     shm_unlink(shmpath);
     munmap(shmp, sysconf(_SC_PAGESIZE));

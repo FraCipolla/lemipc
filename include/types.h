@@ -3,36 +3,11 @@
 
 #include <stddef.h>
 #include <semaphore.h>
-
-typedef struct { int x; int y; } t_pos;
-
-typedef struct s_player {
-    size_t              current;
-    size_t              team;
-    t_pos               pos;
-    struct s_player     *next;
-}   t_player;
-
-typedef struct s_team {
-    size_t          team_idx;
-    size_t          team_size;
-    t_player        *players;
-    struct s_team   *next;
-}   t_team;
-
-typedef struct s_board {
-    size_t      width;
-    size_t      height;
-    t_player    *players;
-}   t_board;
+#include <stdint.h>
 
 typedef struct s_game_state {
-    sem_t       init;
-    short       b_resource_created;
-    t_board     *board;
-    size_t      n_players;
-    size_t      n_teams;
-    t_team      *teams;
+    sem_t       play;
+    int8_t      board[256][256];
 }   t_game_state;
 
 #endif
