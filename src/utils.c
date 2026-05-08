@@ -1,6 +1,8 @@
 #include <utils.h>
 
-void cleanup() {
+void cleanup(t_game_state *shmp) {
+    shm_unlink(shmpath);
+    munmap(shmp, sysconf(_SC_PAGESIZE));
 }
 
 bool is_game_over(t_game_state *gs, int8_t team) {

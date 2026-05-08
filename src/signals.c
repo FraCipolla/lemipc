@@ -20,6 +20,10 @@ void handle_sigint(int sig) {
     if (sem_wait(&shmp->play) == -1)
         err(EXIT_FAILURE, "sem_wait");
 
-       
-    // add logic to use semaphore && check if last player && cleanup
+    if (shmp->n_players > 1)
+        return ;
+
+    // you're the last player, clear resources
+    cleanup();
+    exit(EXIT_SUCCESS);
 }

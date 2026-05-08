@@ -11,12 +11,11 @@
 
 #define BUF_SIZE 1024   /* Maximum size for exchanged string */
 
-struct shmbuf {
-    sem_t  sem1;            /* POSIX unnamed semaphore */
-    sem_t  sem2;            /* POSIX unnamed semaphore */
-    size_t cnt;             /* Number of bytes used in 'buf' */
-    char   buf[BUF_SIZE];   /* Data being transferred */
-};
+typedef struct s_game_state {
+    sem_t       play;
+    int8_t      board[256][256];
+    uint8_t     n_players;
+}   t_game_state;
 
 
 /*
